@@ -1,0 +1,1591 @@
+* If using windows
+You can try [[https://blog.ramdoot.in/emacs-how-to-share-the-same-init-file-between-linux-and-windows-10d6fbd441c0][this]], but I didn't read the article yet.
+* What to do on first load (linux)
+** If packages not found
+well idk why, but sometimes I have to install them "manually"
+with: 
+M-x list-packages
+"C-s" to search (or "C-r")
+click on "i" on each package you want to install
+then when all selected, "x" and "yes"
+** Install Hack font in the computer (better if nerd font)
+** Doom modeline   
+=M-x all-the-icons-install-fonts=
+
+** pdf-tools
+=M-x pdf-tools-install=
+** org-mode pdf export
+see
+[[https://askubuntu.com/questions/296638/texlive-cant-find-wrapfig-sty-while-package-is-installed]]
+install texlive-latex-extra (I did it via my linux package manager)
+** yasnippet
+M-x yas-reload-all
+to re-get all the snippets 
+(they need to be at a precise directory:
+#+begin_example 
+/home/mehdif/.emacs.d/personal_MF/yasnippets/
+#+end_example
+** auctex
+install it from M-x list-packages
+and search for auctex
+* Config
+** Packages management
+*** Packages
+**** Load path
+  #+begin_src emacs-lisp 
+  ; for testing purposes
+  (add-to-list 'load-path "/home/mehdif/.emacs.d/personal_MF/mylisplab/")
+  #+end_src
+
+**** Packages management
+
+ #+begin_src emacs-lisp
+ ;; Initialize package sources
+ (require 'package)
+ (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                          ("org" . "https://orgmode.org/elpa/")
+                          ("elpa" . "https://elpa.gnu.org/packages/")))
+ (package-initialize)
+ (unless package-archive-contents
+  (package-refresh-contents))
+
+ ;; Initialize use-package on non-Linux platforms
+ (unless (package-installed-p 'use-package)
+    (package-install 'use-package))
+
+ (require 'use-package)
+ (setq use-package-always-ensure t)
+ (setq use-package-verbose t) ; for diagnosis purposes
+  #+end_src
+
+**** pdf-tools
+ See [[https://github.com/politza/pdf-tools][politza/pdf-tools: Emacs support library for PDF files.]]
+ #+begin_src emacs-lisp
+   (use-package pdf-tools
+     :mode ("\\.pdf\\'" . pdf-view-mode)
+     :config (setq pdf-view-midnight-colors '("gainsboro" . "#002b36"))
+     :hook (pdf-view-mode . (lambda () (display-line-numbers-mode -1) (pdf-sync-minor-mode 1))))
+ (require 'pdf-tools)
+ #+end_src
+
+ #+RESULTS:
+ : pdf-tools
+
+**** Keys management (general)
+  See [[https://github.com/noctuid/general.el][noctuid/general.el: More convenient key definitions in emacs]]
+  #+begin_src emacs-lisp
+    (use-package general)
+  #+end_src
+** Making life easy
+*** General
+**** Things saved by emacs
+***** Backup files
+#+begin_src emacs-lisp 
+(use-package no-littering)
+
+;; to change the name of the directories used, but doesn't seem to work
+;;(setq no-littering-etc-directory
+;;      (expand-file-name "config/" user-emacs-directory))
+;;(setq no-littering-var-directory
+;;      (expand-file-name "data/" user-emacs-directory))
+
+;; auto save files
+(setq auto-save-file-name-transforms
+      `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
+
+;; customisation
+(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+;; or
+;; (setq custom-file (no-littering-expand-etc-file-name "custom.el"))
+
+#+end_src
+
+#+RESULTS:
+: /home/mehdif/.emacs.d/custom.el
+
+
+***** Perspective
+https://github.com/nex3/perspective-el 
+
+   #+begin_src emacs-lisp
+(require 'ibuffer)
+
+(use-package perspective
+  :bind
+  ("C-x C-b" .  persp-ibuffer)   ; or use a nicer switcher, see https://github.com/nex3/perspective-el#buffer-switchers
+  :config
+  (persp-mode))
+
+(require 'perspective)
+   #+end_src
+
+   #+RESULTS:
+   : perspective
+
+***** Undo tree
+****** Installation
+   See [[https://github.com/apchamberlain/undo-tree.el]]
+   #+begin_src emacs-lisp 
+   (use-package undo-tree)
+   (global-undo-tree-mode)
+   #+end_src
+
+****** Creator recommendations
+   `undo-tree-switch-branch`
+     Switch undo-tree branch.
+     (What does this mean? Better press the button and see!)
+
+   C-x u  (`undo-tree-visualize`)
+     Visualize the undo tree.
+     (Better try pressing this button too!)
+
+   C-x r u  (`undo-tree-save-state-to-register`)
+     Save current buffer state to register.
+
+   C-x r U  (`undo-tree-restore-state-from-register`)
+     Restore buffer state from register.
+**** Electric indent off
+  #+begin_src emacs-lisp 
+  (setq electric-indent-mode nil)
+  #+end_src
+
+  #+RESULTS:
+  : -1
+**** Asking for confirmation concisely:                                 :WEB:
+  Link: http://org.ryuslash.org/dotfiles/emacs/init.html#sec-7-1 Being
+  asked to type in yes explicitly all the time gets very tedious. I
+  understand that it is safer since y is much easier to type in
+  accidentally than yes and so the potential to say yes to things you
+  don't want is there, but I haven't had any such problems yet.
+
+  #+begin_src emacs-lisp
+  (defalias 'yes-or-no-p 'y-or-n-p)
+  #+end_src
+
+  #+RESULTS:
+  : yes-or-no-p
+**** Increase/decrease text size in emacs                               :WEB:
+#+begin_src emacs-lisp 
+(global-set-key (kbd "C-+") 'text-scale-increase)
+(global-set-key (kbd "C--") 'text-scale-decrease)
+#+end_src
+
+#+RESULTS:
+: text-scale-decrease
+
+ C-x C-0 restores the default font size
+#+RESULTS:
+: text-scale-decrease
+
+**** Insertion
+***** Yasnippet
+  #+begin_src emacs-lisp 
+  (use-package yasnippet)
+  (setq yas-snippet-dirs
+        '("/home/mehdif/.emacs.d/personal_MF/yasnippets/" ;; personal snippets
+
+  ;        "/path/to/yasnippet/yasmate/snippets" ;; if you want to add directories just put them
+          ))
+
+  (yas-global-mode 1) ;; or M-x yas-reload-all if you've started YASnippet already.
+  #+end_src
+***** auto insert
+  #+begin_src emacs-lisp 
+   (defun mp-insert-date ()
+     (interactive)
+     (insert (format-time-string "%x")))
+
+   (defun mp-insert-time ()
+     (interactive)
+     (insert (format-time-string "%X")))
+
+   (global-set-key (kbd "C-c i d") 'mp-insert-date)
+   (global-set-key (kbd "C-c i t") 'mp-insert-time)
+  #+end_src
+
+  #+RESULTS:
+  : mp-insert-time
+***** abbrev-mode
+see [[https://www.emacswiki.org/emacs/AbbrevMode]]
+#+begin_src emacs-lisp 
+(setq abbrev-file-name             ;; tell emacs where to read abbrev
+        "~/.emacs.d/personal_MF/abbrev/abbrev_defs")    ;; definitions from...
+
+(setq save-abbrevs 'silent)        ;; save abbrevs when files are saved
+
+;if you want to add a hook:
+;(dolist (hook '(erc-mode-hook
+;                    emacs-lisp-mode-hook
+;                    text-mode-hook))
+;      (add-hook hook #'abbrev-mode))
+#+end_src
+
+#+RESULTS:
+: silent
+**** utf-8
+#+begin_src emacs-lisp 
+(setq locale-coding-system 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+(set-selection-coding-system 'utf-8)
+(prefer-coding-system 'utf-8)
+#+end_src
+
+#+RESULTS:
+
+*** Languages
+**** Latex (auctex)
+ see [[info:auctex#Quick Start][info:auctex#Quick Start]]
+
+    In order to get support for many of the LaTeX packages you will use
+ in your documents, you should enable document parsing as well, which can
+ be achieved by putting
+
+ #+begin_src emacs-lisp 
+     (setq TeX-auto-save t)
+      (setq TeX-parse-self t)
+ #+end_src
+
+    into your init file.  Finally, if you often use '\include' or
+ '\input', you should make AUCTeX aware of the multi-file document
+ structure.  You can do this by inserting
+
+ #+begin_src emacs-lisp 
+      (setq-default TeX-master nil)
+      (setq TeX-parse-all-errors t) ; to be able to use latex error overview
+      (setq TeX-error-overview-open-after-TeX-run t)
+ #+end_src
+
+ #+RESULTS:
+ : t
+
+ see
+ [[https://emacs.stackexchange.com/questions/19472/how-to-let-auctex-open-pdf-with-pdf-tools]]
+
+ #+begin_src emacs-lisp 
+ ;; Use pdf-tools to open PDF files
+ (setq TeX-view-program-selection '((output-pdf "PDF Tools"))
+       TeX-source-correlate-start-server t)
+
+ ;; Update PDF buffers after successful LaTeX runs
+ (add-hook 'TeX-after-compilation-finished-functions
+            #'TeX-revert-document-buffer)
+ #+end_src
+**** lsp-mode
+***** pre-launch breadcrumb segment
+
+ #+begin_src emacs-lisp 
+  (defun lkr/lsp-mode-setup ()
+    (setq lsp-headerline-breadcrumb-segments '(path-up-to-project file symbols))
+    (lsp-headerline-breadcrumb-mode))
+  #+end_src
+
+  #+RESULTS:
+  : lkr/lsp-mode-setup
+
+***** lsp
+ #+begin_src emacs-lisp 
+    (use-package lsp-mode
+      :commands (lsp lsp-deferred)
+      :hook (lsp-mode . lkr/lsp-mode-setup)
+      :init
+      (setq lsp-keymap-prefix "C-c l") ;; or C-l
+      :config
+      (add-hook 'c++-mode-hook #'lsp-deferred) 
+      (add-hook 'python-mode-hook #'lsp-deferred) 
+      ;; It tells clangd that it can use 4 concurrent jobs and to make a complete background index on disk.
+      (setq lsp-clients-clangd-args '("-j=4" "-background-index" "-log=error"))
+      (lsp-enable-which-key-integration t))
+
+  #+end_src
+
+  #+RESULTS:
+  | company-mode | lsp-ui-mode | lkr/lsp-mode-setup |
+
+***** Completion with company-mode
+
+ #+begin_src emacs-lisp 
+ (use-package company
+   :after lsp-mode
+   :hook (lsp-mode . company-mode)
+   :bind (:map company-active-map
+               ("<tab>" . company-complete-selection))
+         (:map lsp-mode-map
+               ("<tab>" . company-indent-or-complete-common))
+   :custom
+   (company-minimum-prefix-length 1)
+   (company-idle-delay 0.15))
+ #+end_src
+
+ #+RESULTS:
+
+***** Documentation with lsp-ui
+ #+begin_src emacs-lisp 
+ (use-package lsp-ui
+   :hook (lsp-mode . lsp-ui-mode)
+   :bind (:map lsp-ui-peek-mode-map
+          ("C-s" . lsp-ui-peek--select-next)
+          ("C-d" . lsp-ui-peek--select-prev)
+          ("C-r" . lsp-ui-peek--goto-xref)	
+          ("C-s" . lsp-ui-peek--select-next))
+   :config
+   (setq lsp-ui-doc-enable nil)
+   (setq lsp-ui-doc-position 'bottom)
+   (setq lsp-ui-sideline-delay 0.25))
+ #+end_src
+
+ #+RESULTS:
+ : lsp-ui-peek--select-next
+
+***** treemacs for file fetching
+ #+begin_src emacs-lisp 
+ (use-package lsp-treemacs
+   :after lsp
+   :config 
+   (lsp-treemacs-sync-mode 1))
+ #+end_src
+
+ #+RESULTS:
+
+***** lsp-ivy
+ to be able to use ivy search lsp-ivy in a project
+ #+begin_src emacs-lisp 
+ (use-package lsp-ivy
+   :after lsp)
+ #+end_src
+
+ #+RESULTS:
+
+***** flycheck
+
+ #+begin_src emacs-lisp 
+ (use-package flycheck
+   :after lsp)
+ #+end_src
+
+ #+RESULTS:
+
+**** Python
+  python:
+  #+begin_src emacs-lisp 
+   (use-package python-mode
+     :ensure nil
+     :hook (python-mode . lsp-deferred)
+     ;(python-shell-interpreter "python3") ;; if you need to change the interpreter
+  )
+  #+end_src
+
+  #+RESULTS:
+  | lsp-deferred | doom-modeline-env-setup-python |
+
+**** C++ 
+Compile func inspired by:
+[[https://linuxhint.com/c_emacs_configuration/][Use emacs to code in c++]]
+
+#+begin_src emacs-lisp
+(defun lkr/cpp-compile-current-file ()
+  (interactive)
+
+(set (make-local-variable 'lkr/file) (file-name-nondirectory buffer-file-name))
+(set (make-local-variable 'lkr/compile-output) 
+     (eshell-command-result 
+       (format "%s %s %s %s"
+                 "g++" 
+                 lkr/file
+                 "-pedantic-errors -Wall -Weffc++ -Wextra -Wsign-conversion -Werror -std=c++17 -o"
+                 (concat "exec_" (file-name-sans-extension lkr/file)))))
+
+
+(if (= (length lkr/compile-output) 0)
+    (message " Compilation successful  ") 
+    (message (format " Take a deep breath and debug this \n%s" lkr/compile-output))))
+
+ (general-define-key
+  "C-c l c" 'lkr/cpp-compile-current-file) 
+#+end_src
+
+#+RESULTS:
+
+***** test
+  ;#+begin_src emacs-lisp 
+  (string-equal "" (eshell-command-result ""))
+  #+end_src
+
+  #+RESULTS:
+
+  ;#+begin_src emacs-lisp 
+  (defun lkr/cpp-compile-current-file ()
+    (interactive)
+
+  (set (make-local-variable 'lkr/file) (file-name-nondirectory buffer-file-name))
+  (set (make-local-variable 'lkr/compile-output) 
+       (eshell-command-result 
+         (format "%s %s %s %s"
+                   "g++" 
+                   lkr/file
+                   "-o -pedantic-errors -Wall -Weffc++ -Wextra -Wsign-conversion -Werror -std=c++17"
+                   (file-name-sans-extension lkr/file))))
+
+
+  (if (= (length lkr/compile-output) 0)
+      (message "yo it worked bro") 
+      (message (format "bro it's not workin'... \n%s" lkr/compile-output))))
+
+   (general-define-key
+    "C-c l c" 'lkr/cpp-compile-current-file) 
+  #+end_src
+
+**** rainbow delimiters
+#+begin_src emacs-lisp 
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode)
+        (TeX-mode . rainbow-delimiters-mode))
+#+end_src
+
+#+RESULTS:
+| rainbow-delimiters-mode |
+
+*** Management project
+**** magit
+[[https://magit.vc/][Magit website]]
+ #+begin_src emacs-lisp 
+ (use-package magit
+   :commands (magit-status magit-get-current-branch))
+ 
+;; so magit stays in the same window
+;  :custom
+;   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
+ #+end_src
+
+ #+RESULTS:
+ : magit-get-current-branch
+**** projectile
+#+begin_src emacs-lisp 
+(use-package projectile 
+  :diminish projectile-mode
+  :config (projectile-mode)
+  :after lsp-mode
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap 
+  ("C-c p" . projectile-command-map)
+  :init
+  (when (file-directory-p "~/Documents/projets/code")
+    (setq projectile-project-search-path '("~/Projects/Code")))
+;; where do projectile will search projects (git repo and other)
+  
+(setq projectile-switch-project-action #'projectile-dired))
+;; what to do when you switch projects (in this case, open dired) 
+#+end_src
+
+#+RESULTS:
+| lambda | nil | (interactive) | (use-package-autoload-keymap 'projectile-command-map 'projectile nil) |
+
+*** org-mode
+**** Pretty bullets
+    #+begin_src emacs-lisp 
+    (use-package org-bullets
+      :config
+      (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+ #+end_src
+
+**** Defun org config
+    
+ #+begin_src emacs-lisp 
+ (defun lkr/org-mode-config ()
+ #+end_src
+
+**** Writing help
+***** Auto fill hook
+  #+begin_src emacs-lisp 
+  (add-hook 'org-mode-hook 'turn-on-auto-fill)
+  #+end_src
+***** org-ref
+
+#+begin_src emacs-lisp 
+(use-package org-ref
+  :after org-mode)
+
+;; TODO I'm trying to change this but I can't find a way
+; (general-define-key
+;  "C-c ("  )
+
+(setq reftex-default-bibliography '("~/Documents/srx/bibliographie/references.bib"))
+
+;; see org-ref for use of these variables
+(setq org-ref-bibliography-notes "~/Documents/srx/bibliographie/notes.org"
+      org-ref-default-bibliography '("~/Documents/srx/bibliographie/references.bib")
+      org-ref-pdf-directory "~/Documents/srx/bibliographie/bibtex-pdfs/")
+
+;; helps org export to latex to handle well bibliography
+(setq org-latex-pdf-process
+      '("pdflatex -interaction nonstopmode -output-directory %o %f"
+	"bibtex %b"
+	"pdflatex -interaction nonstopmode -output-directory %o %f"
+	"pdflatex -interaction nonstopmode -output-directory %o %f"))
+
+(require 'org-ref)
+(general-define-key  
+  "C-c ("  'org-ref-helm-insert-ref-link
+  "C-c ["  'org-ref-helm-insert-cite-link)
+
+#+end_src
+
+#+RESULTS:
+
+**** Babel
+***** Languages
+ #+begin_src emacs-lisp 
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((python . t)
+ ))
+
+  #+end_src
+
+  #+RESULTS:
+ 
+***** Sources codes
+****** Execution confirmation bypass
+ Bypass confirmation when executing source blocks.
+ See
+ [[https://emacs.stackexchange.com/questions/21124/execute-org-mode-source-blocks-without-security-confirmation]]]]
+
+ #+begin_src emacs-lisp 
+ (defun my-org-confirm-babel-evaluate (lang body)
+   (not (member lang '("python" "C"))))
+ (setq org-confirm-babel-evaluate 'my-org-confirm-babel-evaluate)
+ #+end_src
+
+****** Code blocks templates
+ #+begin_src emacs-lisp
+ ;(require 'org-tempo) ; if you want to enable <s for instance
+
+ ; C-q C-j to put the space after python
+ (add-to-list 'org-structure-template-alist 
+    '("p" . "src python :results output
+ "))
+ (add-to-list 'org-structure-template-alist 
+    '("m" . "src emacs-lisp 
+ "))
+
+ #+end_src
+
+ #+RESULTS:
+ : ((m . src emacs-lisp 
+ : ) (p . src python :results output
+ : ) (a . export ascii) (c . center) (C . comment) (e . example) (E . export) (h . export html) (l . export latex) (q . quote) (s . src) (v . verse))
+
+****** Python fuckery solver
+ #+begin_src emacs-lisp 
+ (setq python-indent-offset 4)
+ (setq org-edit-src-content-indentation 0)
+ #+end_src
+
+ see [[https://www.reddit.com/r/orgmode/comments/mj6rg2/python_indentation_in_source_block/]]
+ #+begin_src emacs-lisp 
+ (setq-default indent-tabs-mode nil) ; FUCK tabs :)
+ #+end_src
+
+ #+RESULTS:
+
+ après avoir enlevé tout, Josselin a trouvé que le problème c'était
+ python-indent-offset
+ qui était à 0 et qui devrait être à 4
+ puis j'ai eu
+ "
+ Warning (python): Your ‘python-shell-interpreter’ doesn’t seem to
+ support readline, yet ‘python-shell-completion-native-enable’ was t
+ and "python" is not part of the
+ ‘python-shell-completion-native-disabled-interpreters’ list.  Native
+ completions have been disabled locally. 
+ "
+ donc j'ai rajouté python à la variable
+ python-shell-completion-native-disabled-interpreters
+ 
+**** General variables
+
+ #+begin_src emacs-lisp
+  (custom-set-variables
+   '(org-directory "/home/mehdif/Documents/org_mode_dir")
+   '(org-default-notes-file (concat org-directory "/capture/capture_notes.org"))
+   '(org-agenda-files (list org-directory))
+  )
+
+  (setq org-hide-emphasis-markers nil)
+  (setq org-log-done 'time) ; enables timestamps in closes todos
+  (setq org-log-done 'note) ; enables notes in closed todos
+  (setq org-footnote-auto-adjust t)
+  (setq org-footnote-define-inline t)
+
+#+end_src
+
+ #+RESULTS:
+ : t
+
+**** Capture
+***** Variables
+  
+***** Bindings
+ #+begin_src emacs-lisp
+ (global-set-key (kbd "C-c m") 'org-store-link)
+ (global-set-key (kbd "C-c a") 'org-agenda)
+ (global-set-key (kbd "C-c c") 'org-capture)
+ #+end_src
+
+ #+RESULTS:
+ : org-capture
+
+***** Templates
+
+   #+begin_src emacs-lisp
+ (setq org-capture-templates
+ '( 
+
+  ("f" "coFFre à inFormations utiles")
+
+    ("fc" "Citations" entry (file "capture/coffre/coffre_citations.org")
+     "* %^{Nom?} %^g \n%^{source}p\n%i %? " :empty-lines 1)
+
+    ("fp" "Programmation")
+    ("fpp" "Python" entry (file+headline "capture/coffre/coffre_programmation.org" "python")
+     "* %^{Nom du bout de code?} \n%^{source}p %^{description}p \n#+begin_src python\n%i%?\n#+end_src
+ \n%u" :empty-lines 1)
+    ("fpc" "C++" entry (file+headline "capture/coffre/coffre_programmation.org" "C++")
+     "* %^{Nom du bout de code?} \n%^{source}p %^{description}p \n#+begin_src C++\n%i%?\n#+end_src
+ \n%u" :empty-lines 1)
+    ("fpr" "R" entry (file+headline "capture/coffre/coffre_programmation.org" "R")
+     "* %^{Nom du bout de code?} \n%^{source}p %^{description}p \n#+begin_src R\n%i%?\n#+end_src
+ \n%u" :empty-lines 1)
+    ("fpl" "lisp" entry (file+headline "capture/coffre/coffre_programmation.org" "emacs-lisp")
+     "* %^{Nom du bout de code?} \n%^{source}p %^{description}p \n#+begin_src emacs-lisp\n%i%?\n#+end_src
+ \n%u" :empty-lines 1)
+
+    ("fd" "sujets Divers et variés" entry (file+headline "capture/coffre/coffre_divers.org" "Divers")
+     "* %^{Nom de l'entrée?} %^g \n%^{source}p \n%i%?\n%u" :empty-lines 1)
+
+  ("i" "Idées (moins urgent que TODOs)")
+    ("ip" "Petites idées" entry (file+headline "capture/idees.org" "Petite")
+     "* %?\n%i\n
+ %u" :empty-lines 1)
+    ("ig" "Grosses idées" entry (file+headline "capture/idees.org" "Grosse")
+     "* %?\n%i\n
+ %u" :empty-lines 1)
+
+
+  ("l" "Listes de choses à voir ou sur lesquelles se renseigner")
+    ("lo" "Œuvres" entry (file+headline "capture/coffre/coffre_a_voir.org" "Œuvres")
+     "* %^{Nom de l'œuvre?} \n:PROPERTIES:
+ :importance: %^{importance entre 0 et 5?}
+ :source: %^{source?}
+ :type: %^{type?|none|livre|film|site|article|autre}
+ :END:\n%i%?
+ %u" :empty-lines 1)
+    ("ls" "Sujets/idées/concepts sur lesquels se renseigner" entry (file+headline "capture/coffre/coffre_a_voir.org" "Sujets/Idées/Concepts")
+     "* %^{Nom?} %^g \n:PROPERTIES:
+ :importance: %^{importance entre 0 et 5?}
+ :END:\n%i%?
+ %u" :empty-lines 1)
+
+  ("t" "Todos")
+  ("tc" "Cours" entry (file+headline "capture/todos.org" "Cours")
+   "* TODO %? \n%i\n%a %U" :empty-lines 1)
+  ("tp" "Perso" entry (file+headline "capture/todos.org" "Perso")
+   "* TODO %? \n%i\n%a %U" :empty-lines 1)
+  ("tr" "Regulier, choses qui reviennent souvent comme le loyer" entry (file+headline "capture/todos.org" "Regulier")
+   "* TODO %? \n%i\n%a %U" :empty-lines 1)
+  ("ts" "Social" entry (file+headline "capture/todos.org" "Social")
+   "* TODO %? \n%i\n%a %U" :empty-lines 1)
+  ("ta" "Autres" entry (file+headline "capture/todos.org" "Autres")
+   "* TODO %? \n%i\n%a %U" :empty-lines 1)
+ 
+  ("j" "Journal" entry (file+datetree "capture/journal.org")
+   "* %i%?\nEntered on %U" :empty-lines 1)
+
+  ("a" "Autres" entry (file "capture/autres.org")
+   "* %i%? \n%u" :empty-lines 1)
+
+ ))
+
+  #+end_src
+
+**** Ergonomic
+
+***** LateX preview
+
+  see [[https://stackoverflow.com/questions/11272236/how-to-make-formule-bigger-in-org-mode-of-emacs]]
+
+  #+begin_src emacs-lisp 
+   ; set the scale to 2.0
+  (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
+
+  (general-define-key
+   "C-c C-x C-S-l" 'org-toggle-pretty-entities) ; because C-c C-x C-l is bound to toggle latex preview 
+  #+end_src
+
+***** Colors
+    
+  test [[https://zzamboni.org/post/beautifying-org-mode-in-emacs/]]
+  #+begin_src emacs-lisp 
+    (custom-theme-set-faces
+     'user
+     '(org-link ((t (:foreground "#38f0ff" :underline t))))
+  )
+  #+end_src
+
+  #+RESULTS:
+   
+***** Code highlighting
+see [[https://www.youtube.com/watch?v=0qHloGTT8XE&t=11s][video (check the ressource file!!!)]]
+
+#+begin_src emacs-lisp 
+(setq org-latex-listings 't)
+#+end_src
+
+#+RESULTS:
+: t
+
+**** End of defun
+
+ #+begin_src emacs-lisp 
+  )
+ #+end_src
+
+**** use-package org
+
+ #+begin_src emacs-lisp 
+(setq org-startup-folded t) ;; outside of defun because it didn't do it before opening a file
+
+ (use-package org
+   :hook (org-mode . lkr/org-mode-config)
+   :commands (org-capture org-agenda)
+   :config
+   )
+ #+end_src
+
+ #+RESULTS:
+ | turn-on-auto-fill | (lambda nil (display-line-numbers-mode 0)) | lkr/org-mode-config | (lambda nil (org-bullets-mode 1)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-show-all append local] 5] | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes |
+
+**** org export setup
+from [[https://www.youtube.com/watch?v=0qHloGTT8XE&t=11s][youtube video]]
+here we create our own class, which will only include package we need,
+and not additional things set by org export.
+
+To include the bare minimum packages, we will use a setup file.
+So don't forget to put
+#+begin_example
+#+SETUPFILE: ~/Dropbox/Mackup/emacs-stuff/org/jake-standard-latex-export.org
+#+end_example
+
+in the beginning of your org file
+
+#+begin_src emacs-lisp 
+(with-eval-after-load 'ox-latex
+(add-to-list 'org-latex-classes
+             '("org-plain-latex"
+               "\\documentclass{article}
+           [NO-DEFAULT-PACKAGES]
+           [PACKAGES]
+           [EXTRA]"
+               ("\\section{%s}" . "\\section*{%s}")
+               ("\\subsection{%s}" . "\\subsection*{%s}")
+               ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+               ("\\paragraph{%s}" . "\\paragraph*{%s}")
+               ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+
+#+end_src
+
+#+RESULTS:
+| org-plain-latex | \documentclass{article} |
+
+**** packages enhancing org
+***** pdftools integration
+ inspired by [[https://emacs.stackexchange.com/questions/19686/how-to-use-pdf-tools-pdf-view-mode-in-emacs][use pdf view in orgmode]]
+ and using [[https://github.com/fuxialexander/org-pdftools][org-pdftools]] instead
+
+ #+begin_src emacs-lisp 
+ (use-package org-pdftools
+   :hook (org-mode . org-pdftools-setup-link))
+
+ (add-to-list 'org-file-apps 
+              '("\\.pdf\\'" . (lambda (file link)
+                                      (org-pdftools-open link))))
+ #+end_src
+
+ #+RESULTS:
+ : ((\.pdf\' lambda (file link) (org-pdftools-open link)) (auto-mode . emacs) (directory . emacs) (\.mm\' . default) (\.x?html?\' . default) (\.pdf\' . default))
+
+*** Discoverability
+**** Which-key
+  See [[https://github.com/justbur/emacs-which-key][justbur/emacs-which-key: Emacs package that displays available keybindings in popup]]
+  #+begin_src emacs-lisp
+     (use-package which-key
+       :config
+       (setq which-key-idle-delay 0.3)
+       (which-key-mode 1))
+  #+end_src
+**** Helpful
+  See [[https://github.com/Wilfred/helpful][Wilfred/helpful: A better Emacs *help* buffer]]
+  #+begin_src emacs-lisp
+    (use-package helpful
+      :defer
+      :general ("C-h f" 'helpful-callable)
+               ("C-h v" 'helpful-variable)
+               ("C-h k" 'helpful-key))
+
+  ;; Note that the built-in `describe-function' includes both functions
+  ;; and macros. `helpful-function' is functions only, so we provide
+  ;; `helpful-callable' as a drop-in replacement.
+ (with-eval-after-load 'helpful
+  (global-set-key (kbd "C-h f") #'helpful-callable)
+
+  (global-set-key (kbd "C-h v") #'helpful-variable)
+  (global-set-key (kbd "C-h k") #'helpful-key)
+
+  (setq counsel-describe-function-function #'helpful-callable)
+  (setq counsel-describe-variable-function #'helpful-variable)
+ )
+  #+end_src
+
+  #+RESULTS:
+  : helpful-variable
+  
+**** Swiper
+#+begin_src emacs-lisp 
+(use-package swiper)
+#+end_src
+**** Select(rum) them all! And more
+***** Selectrum package
+ #+begin_src emacs-lisp 
+  (use-package selectrum
+    :bind(
+          :map selectrum-minibuffer-map
+               ("M-é" . selectrum-kill-ring-save)
+               ("C-r" . selectrum-select-current-candidate)
+               ("C-t" . selectrum-backward-kill-sexp)
+               ("C-s" . selectrum-next-candidate)
+               ("C-d" . selectrum-previous-candidate))
+    :config
+    (setq selectrum-fix-vertical-window-height 7)
+    (selectrum-mode +1))
+ #+end_src
+
+ #+RESULTS:
+ : selectrum-previous-candidate
+
+***** Prescient
+see [[https://github.com/raxod502/prescient.el][Selectrum-prescient github]]
+#+begin_src emacs-lisp 
+ (use-package selectrum-prescient
+   :config
+   ;; to make sorting and filtering more intelligent
+   (selectrum-prescient-mode +1)
+   ;; to save your command history on disk
+   (prescient-persist-mode +1))
+#+end_src
+
+#+RESULTS:
+: t
+
+***** Orderless
+[[https://github.com/oantolin/orderless][Orderless github]]
+#+begin_src emacs-lisp 
+(use-package orderless
+  :custom (completion-styles '(orderless)))
+
+;; Persist history over Emacs restarts
+(savehist-mode)
+
+;; Optional performance optimization
+;; by highlighting only the visible candidates.
+(setq orderless-skip-highlighting (lambda () selectrum-is-active))
+(setq selectrum-highlight-candidates-function #'orderless-highlight-matches)
+
+;; In some cases you may want to consider to use Prescient on top of
+;; Orderless. Prescient can be used to provide frecency-based sorting
+;; and history persistence by adding the following.
+(setq selectrum-prescient-enable-filtering nil)
+(selectrum-prescient-mode +1)
+(prescient-persist-mode +1)
+
+#+end_src
+
+#+RESULTS:
+: t
+
+***** Marginalia
+see [[https://github.com/minad/marginalia][Marginalia github]]
+#+begin_src emacs-lisp 
+;; Enable richer annotations using the Marginalia package
+(use-package marginalia
+  ;; Either bind `marginalia-cycle` globally or only in the minibuffer
+  :bind (("M-A" . marginalia-cycle)
+         :map minibuffer-local-map
+         ("M-A" . marginalia-cycle))
+
+  ;; The :init configuration is always executed (Not lazy!)
+  :init
+
+  ;; Must be in the :init section of use-package such that the mode gets
+  ;; enabled right away. Note that this forces loading the package.
+  (marginalia-mode))
+
+#+end_src
+
+#+RESULTS:
+: marginalia-cycle
+
+***** consult
+#+begin_src emacs-lisp 
+(use-package consult
+:bind
+("C-s" . consult-line))
+#+end_src
+
+#+RESULTS:
+: consult-line
+
+** Making life beautiful 
+*** General
+**** Startup message
+  #+begin_src emacs-lisp
+ ; to skip the intro page
+  (setq inhibit-startup-message t)
+
+ ; tells the time it took to launch emacs
+  (defun efs/display-startup-time ()
+    (message "Emacs loaded in %s with %d garbage collections."
+             (format "%.2f seconds"
+                     (float-time
+                       (time-subtract after-init-time before-init-time)))
+             gcs-done))
+
+  (add-hook 'emacs-startup-hook #'efs/display-startup-time)
+  #+end_src
+
+  #+RESULTS:
+  : t
+
+**** Eye candy
+
+  Doom modeline
+   #+begin_src emacs-lisp
+   (use-package doom-modeline
+     :init (doom-modeline-mode 1)
+     :custom ((doom-modeline-height 15)))
+   #+end_src
+ 
+**** Minimalistic options
+
+  #+begin_src emacs-lisp
+  (scroll-bar-mode -1)        ; Disable visible scrollbar
+  (tool-bar-mode -1)          ; Disable the toolbar
+  (tooltip-mode -1)           ; Disable tooltips
+  (menu-bar-mode -1)            ; Disable the menu bar
+  #+end_src
+
+  #+RESULTS:
+
+**** Distances
+     
+  #+begin_src emacs-lisp
+  (set-fringe-mode 10)        ; Give some breathing room
+  #+end_src
+
+**** Change frame name of emacs:                                   :LUKA:WEB:
+ #+begin_src emacs-lisp 
+ (setq frame-title-format
+  '("Emacs - " (buffer-file-name "%f"
+     (dired-directory dired-directory "%b"))))
+ #+end_src
+
+ #+RESULTS:
+ | Emacs - | (buffer-file-name %f (dired-directory dired-directory %b)) |
+
+**** Font & Theme
+
+  #+begin_src emacs-lisp
+ (set-face-attribute 'default nil :font "Hack Nerd Font" :height 132)
+ (load-theme 'wombat)
+  #+end_src 
+
+**** Useful indicators
+ see [[https://www.emacswiki.org/emacs/DisplayTime]]
+   #+begin_src emacs-lisp
+   (display-battery-mode 1)    ; Display battery
+   (setq column-number-mode t) ; Display column number
+   (display-time-mode 1)  
+   #+end_src
+
+***** TODO add rainbow-delimiters
+
+**** Disable annoying cursor blinking
+ #+begin_src emacs-lisp 
+ (blink-cursor-mode -1)
+ #+end_src
+**** Line number
+ #+begin_src emacs-lisp 
+ (global-display-line-numbers-mode 1)
+ (setq display-line-numbers-type 'relative)
+
+ ;; disable it for some modes
+ (dolist (mode '(org-mode-hook
+                 treemacs-mode-hook))
+   (add-hook mode (lambda () (display-line-numbers-mode 0))))
+ #+end_src
+
+ #+RESULTS:
+
+**** Highlight current line
+ you can customize the color with [[https://www.color-hex.com/]]
+
+ #+begin_src emacs-lisp 
+ (global-hl-line-mode 1)
+ (set-face-background 'hl-line "#000658")
+ (set-face-foreground 'highlight nil)
+ (set-face-attribute hl-line-face nil :underline nil)
+ #+end_src
+
+ #+RESULTS:
+
+*** Ergonomic
+**** Change default split to be horizontal #Josselin
+#$*test
+;#+begin_src emacs-lisp
+  (defun split-horizontally (window)
+      "Split the window horizontally for temp buffers."
+          (if (and (one-window-p t)
+                  (not (active-minibuffer-window)))
+              (let ((split-height-threshold nil) (split-width-threshold 0))
+                  (split-window-sensibly window))
+              (split-window-sensibly window)))
+  (setq split-window-preferred-function 'split-horizontally)
+#+end_src
+**** ibuffer filtering
+see [[http://martinowen.net/blog/2010/02/03/tips-for-emacs-ibuffer.html]]
+
+#+begin_src emacs-lisp 
+    (setq ibuffer-saved-filter-groups
+          (quote (("default"
+                   ("Dired" (mode . dired-mode))
+		   ("Org-mode" (mode . org-mode))
+		   ("LateX"    (or
+		               (name . "\\.tex$")
+		               (name . "\\.bib$")))
+		   ("PDF"   (name . "\\.pdf$"))
+		   ("Python"   (or
+		               (name . "\\.py$")
+		               (name . "\*Python\*")))
+                   ("planner" (or
+                               (name . "^\\*Calendar\\*$")
+                               (name . "^diary$")
+                               (mode . muse-mode)))
+                   ("emacs" (or
+                             (name . "^\\*scratch\\*$")
+                             (name . "^\\*Messages\\*$")))
+
+		   ("Help" (or (name . "\*Help\*")
+		               (name . "\*Apropos\*")
+		               (name . "\*info\*")))
+                   ("gnus" (or
+                            (mode . message-mode)
+                            (mode . bbdb-mode)
+                            (mode . mail-mode)
+                            (mode . gnus-group-mode)
+                            (mode . gnus-summary-mode)
+                            (mode . gnus-article-mode)
+                            (name . "^\\.bbdb$")
+                            (name . "^\\.newsrc-dribble")))))))
+
+    (add-hook 'ibuffer-mode-hook
+              (lambda ()
+                (ibuffer-switch-to-saved-filter-groups "default")))
+
+(add-hook 'ibuffer-mode-hook
+	  '(lambda ()
+	     (ibuffer-auto-mode 1)
+	     (ibuffer-switch-to-saved-filter-groups "home")))
+
+    (setq ibuffer-show-empty-filter-groups nil)
+
+#+end_src
+
+#+RESULTS:
+
+**** Scrolling
+  #+begin_src emacs-lisp 
+    (use-package smooth-scrolling
+      :demand t
+      :config
+      (smooth-scrolling-mode 1))
+  #+end_src
+
+**** Visual bell
+
+  #+begin_src emacs-lisp
+  (setq visible-bell t) ; Set up the visible bell
+  #+end_src
+
+** My bindings (bépo)
+*** ezbépo-mode
+**** Dependencies [README]
+***** Definitions
+****** Reverse yank 
+   #+begin_src emacs-lisp 
+   ; Definition of reverse cycling in the kill ring
+   (defun yank-pop-forward (arg)
+     (interactive "p")
+     (yank-pop (- arg)))
+     #+end_src
+
+***** Hydra
+  #+begin_src emacs-lisp 
+      (use-package hydra)
+      (require 'hydra)
+  #+end_src
+
+***** README
+****** Undo tree
+******* Installation
+    See [[https://github.com/apchamberlain/undo-tree.el]]
+
+ paste this in your init file:
+
+    (use-package undo-tree)
+    (global-undo-tree-mode)
+
+******* Creator recommendations (i didn't use this)
+    `undo-tree-switch-branch`
+      Switch undo-tree branch.
+      (What does this mean? Better press the button and see!)
+
+    C-x u  (`undo-tree-visualize`)
+      Visualize the undo tree.
+      (Better try pressing this button too!)
+
+    C-x r u  (`undo-tree-save-state-to-register`)
+      Save current buffer state to register.
+
+    C-x r U  (`undo-tree-restore-state-from-register`)
+      Restore buffer state from register.
+**** Keys changed from emacs
+ #+begin_src emacs-lisp 
+ (general-define-key
+  "C-SPC" 'other-window) ; the unbound key is 'set-mark-command which is replaced in the heading ryo-modal in basic actions)
+ ; "C-x C-b" 'ibuffer) ; buffer but better
+ #+end_src
+ If you're having troubles managing your buffers, ibuffer can ease the
+ process, in instance thanks to its filtering features
+**** Ryo modal
+***** Startup
+      #+begin_src emacs-lisp 
+   (use-package ryo-modal
+     :commands ryo-modal-mode
+     :bind ("C-c b" . ryo-modal-mode))
+      #+end_src
+***** Movement
+****** Default
+  #+begin_src emacs-lisp 
+    (ryo-modal-keys 
+    ; Precise movement
+     ("t" backward-char)
+     ("s" next-line)
+     ("d" previous-line)
+     ("r" forward-char))
+
+    ; Rough movement
+    (ryo-modal-keys 
+     ("c" beginning-of-line)
+     ("n" end-of-line))
+    (ryo-modal-key
+     "o" :hydra
+     '(hydra-rough-navigation ()
+              ("M-t" backward-sentence)
+              ("M-r" forward-sentence)
+	      ("r" forward-word)
+	      ("t" backward-word)
+	      ))
+
+	      #+end_src 
+****** Org-mode
+
+ #+begin_src emacs-lisp 
+ ; Rough navigation
+ (with-eval-after-load 'org
+ (ryo-modal-major-mode-keys
+ 'org-mode
+
+  ("o" :hydra
+     '(hydra-org-rough-navigation_1 ()
+    ; "A hydra to navigate through sentences and words."
+ "Chunks navigation"
+              ("M-d" org-backward-paragraph "backward paragraph")
+              ("M-s" org-forward-paragraph "forward paragraph")
+	      ("M-t" org-backward-sentence "backward sentence")
+              ("M-r" org-forward-sentence "forward sentence")
+	      ("r" forward-word "forward word")
+	      ("t" backward-word "backward word")
+	      ))
+  ("e" :hydra
+     '(hydra-org-rough-navigation_2 ()
+    ; "A hydra to navigate through headers, move them if necessary."
+ "Big chunks navigation"
+
+              ("d" org-previous-visible-heading "org-previous-visible-heading")
+              ("s" org-next-visible-heading "org-next-visible-heading")
+	      ("p" org-cycle "org-cycle")
+	      ("M-p" org-babel-execute-src-block "execute-src-block")
+              ("M-d" org-babel-previous-src-block  "previous-src-block")	     
+              ("M-s" org-babel-next-src-block  "next-src-block")	     
+
+	      ))
+	      )
+ )
+ #+end_src
+
+ #+RESULTS:
+ | o   | hydra-org-rough-navigation_1/body       | :mode              | org-mode      |          |
+ | '   | hydra-buffer/body                       |                    |               |          |
+ | u   | org-hydra-yank/body                     | :then              | (org-yank)    |          |
+ | M-S | org-shiftmetadown                       | org-shiftmetadown  | :mode         | org-mode |
+ | M-D | org-shiftmetaup                         | org-shiftmetaup    | :mode         | org-mode |
+ | M-T | org-shiftmetaleft                       | org-shiftmetaleft  | :mode         | org-mode |
+ | M-R | org-shiftmetaright                      | org-shiftmetaright | :mode         | org-mode |
+ | M-s | org-metadown                            | org-metadown       | :mode         | org-mode |
+ | M-d | org-metaup                              | org-metaup         | :mode         | org-mode |
+ | M-t | org-metaleft                            | org-metaleft       | :mode         | org-mode |
+ | M-r | org-metaright                           | org-metaright      | :mode         | org-mode |
+ | C-i | org-insert-heading-respect-content      | :mode              | org-mode      |          |
+ | i   | org-return                              | :mode              | org-mode      |          |
+ | M-i | org-kill-line                           | :mode              | org-mode      |          |
+ | a   | org-delete-backward-char                | :mode              | org-mode      |          |
+ | u   | hydra-yank/body                         | :then              | (yank)        |          |
+ | M-é | kill-region                             |                    |               |          |
+ | M-u | undo-tree-redo                          |                    |               |          |
+ | M-a | undo-tree-undo                          |                    |               |          |
+ | M-i | kill-line                               |                    |               |          |
+ | i   | newline                                 |                    |               |          |
+ | a   | delete-backward-char                    |                    |               |          |
+ | é   | kill-ring-save                          |                    |               |          |
+ | p   | set-mark-command                        |                    |               |          |
+ | b   | ryo-modal-mode                          |                    |               |          |
+ | u   | pdf-view-shrink                         | :mode              | pdf-view-mode |          |
+ | é   | pdf-view-enlarge                        | :mode              | pdf-view-mode |          |
+ | M-S | pdf-view-last-page                      | :mode              | pdf-view-mode |          |
+ | M-D | pdf-view-first-page                     | :mode              | pdf-view-mode |          |
+ | M-s | image-eob                               | :mode              | pdf-view-mode |          |
+ | M-d | image-bob                               | :mode              | pdf-view-mode |          |
+ | t   | image-backward-hscroll                  | :mode              | pdf-view-mode |          |
+ | r   | image-forward-hscroll                   | :mode              | pdf-view-mode |          |
+ | d   | pdf-view-previous-line-or-previous-page | :mode              | pdf-view-mode |          |
+ | s   | pdf-view-next-line-or-next-page         | :mode              | pdf-view-mode |          |
+ | M-t | pdf-view-previous-page-command          | :mode              | pdf-view-mode |          |
+ | M-r | pdf-view-next-page-command              | :mode              | pdf-view-mode |          |
+ | e   | hydra-org-rough-navigation_2/body       | :mode              | org-mode      |          |
+ | x   | hydra-org-rough-navigation_1/body       | :mode              | org-mode      |          |
+ | x   | hydra-rough-navigation/body             |                    |               |          |
+ | n   | end-of-line                             |                    |               |          |
+ | c   | beginning-of-line                       |                    |               |          |
+ | r   | forward-char                            |                    |               |          |
+ | d   | previous-line                           |                    |               |          |
+ | s   | next-line                               |                    |               |          |
+ | t   | backward-char                           |                    |               |          |
+
+****** pdf-tools
+ #+begin_src emacs-lisp 
+ (with-eval-after-load 'pdf-tools
+ (ryo-modal-major-mode-keys
+ 'pdf-view-mode
+              ("M-r" pdf-view-next-page-command)
+              ("M-t" pdf-view-previous-page-command)
+              ("s" pdf-view-next-line-or-next-page)
+              ("d" pdf-view-previous-line-or-previous-page)
+              ("r" image-forward-hscroll)
+              ("t" image-backward-hscroll)
+              ("M-d" image-bob)
+              ("M-s" image-eob)
+              ("M-D" pdf-view-first-page)
+              ("M-S" pdf-view-last-page)
+              ("é" pdf-view-enlarge)
+              ("u" pdf-view-shrink)
+	      ))
+ #+end_src
+
+****** Dired
+
+ (ryo-modal-major-mode-keys
+ 'dired-mode
+     ("M-t" backward-char)
+     ("M-s" next-line)
+     ("M-d" previous-line)
+     ("M-r" forward-char)
+	      )
+
+******* prob
+    ; Remap keys taken by default
+ (ryo-modal-major-mode-keys
+ 'dired-mode 
+     ("t" dired-toggle-marks)
+     ("s" dired-sort-toggle-or-edit)
+     ("d" dired-flag-file-deletion)
+     ("c" dired-do-compress-to)
+     ("n" dired-next-line)
+     ("x" dired-do-flagged-delete)
+ )
+
+****** Ibuffer 
+
+ (ryo-modal-major-mode-keys
+ 'ibuffer-mode
+     ("M-t" backward-char)
+     ("M-s" next-line)
+     ("M-d" previous-line)
+     ("M-r" forward-char)
+	      )
+    ; Remap keys taken by default
+ (ryo-modal-major-mode-keys
+ 'dired-mode 
+     ("t" ibuffer-toggle-marks)
+     ("s" nil)
+     ("d" ibuffer-mark-for-delete)
+     ("r" ibuffer-do-replace-regexp)
+     ("c" nil)
+     ("n" nil)
+     ("x" ibuffer-do-kill-on-deletion-marks))
+
+
+
+******* TODO fix this
+   (ryo-modal-major-mode-keys
+   'ibuffer-mode
+       ("M-t" backward-char)
+       ("M-s" ibuffer-forward-line)
+       ("M-d" ibuffer-backward-line)
+       ("M-r" forward-char)
+       ("M-S" ibuffer-forward-filter-group)
+       ("M-D" ibuffer-backward-filter-group)
+
+	        )
+
+***** Basic actions
+****** Base
+            #+begin_src emacs-lisp 
+    (ryo-modal-keys 
+    ; Mode
+     ("b" ryo-modal-mode))
+    ; Editing
+    (ryo-modal-keys 
+     ("p" set-mark-command)
+     ("é" kill-ring-save)
+     ("a" delete-backward-char)
+     ("i" newline)
+     ("M-i" kill-line)
+     ("M-a" undo-tree-undo)
+     ("M-u" undo-tree-redo)
+     ("M-é" kill-region))
+
+    (ryo-modal-key
+     "u" :hydra
+     '(hydra-yank ()
+              "A hydra to yank !"
+              ("i" yank-pop-forward "next yank")
+              ("a" yank-pop "previous yank")) ; this function needs to be defined !
+	      :then '(yank))
+  #+end_src
+ 
+****** pdf-tools
+ #+begin_src emacs-lisp 
+ (with-eval-after-load 'pdf-tools
+ (ryo-modal-major-mode-keys
+ 'org-mode
+
+  ("x" :hydra
+     '(hydra-org-rough-navigation_1 ()
+    ; "A hydra to navigate through sentences and words."
+ "Chunks navigation"
+              ("M-d" org-backward-paragraph "backward paragraph")
+              ("M-s" org-forward-paragraph "forward paragraph")
+	      ("d" org-backward-sentence "backward sentence")
+              ("s" org-forward-sentence "forward sentence")
+	      ("r" forward-word "forward word")
+	      ("t" backward-word "backward word")
+	      ))
+	      ))
+
+ (with-eval-after-load 'org
+ (ryo-modal-major-mode-keys
+  'org-mode
+              ("a" org-delete-backward-char)
+              ("M-i" org-kill-line)
+              ("i" org-return)
+              ("C-i" org-insert-heading-respect-content)
+              ("M-r" org-metaright "org-metaright")
+              ("M-t" org-metaleft "org-metaleft")
+              ("M-r" org-metaright "org-metaright")
+              ("M-t" org-metaleft "org-metaleft")
+              ("M-d" org-metaup "org-metaup")
+              ("M-s" org-metadown "org-metadown")
+              ("M-R" org-shiftmetaright "org-shiftmetaright")	     	     
+              ("M-T" org-shiftmetaleft "org-shiftmetaleft")
+              ("M-D" org-shiftmetaup "org-shiftmetaup")
+              ("M-S" org-shiftmetadown "org-shiftmetadown")
+          ))
+
+ #+end_src
+
+****** Org-mode
+ #+begin_src emacs-lisp 
+ (with-eval-after-load 'org
+ (ryo-modal-major-mode-keys
+  'org-mode
+     ("a" org-delete-backward-char)
+     ("M-i" org-kill-line)
+     ("i" org-return)
+     ("C-i" org-insert-heading-respect-content)
+    
+              ("M-r" org-metaright "org-metaright")
+              ("M-t" org-metaleft "org-metaleft")
+              ("M-r" org-metaright "org-metaright")
+              ("M-t" org-metaleft "org-metaleft")
+              ("M-d" org-metaup "org-metaup")
+              ("M-s" org-metadown "org-metadown")
+              ("M-R" org-shiftmetaright "org-shiftmetaright")	     	     
+              ("M-T" org-shiftmetaleft "org-shiftmetaleft")
+              ("M-D" org-shiftmetaup "org-shiftmetaup")
+              ("M-S" org-shiftmetadown "org-shiftmetadown")
+
+     )
+
+    (ryo-modal-key
+     "u" :hydra
+     '(org-hydra-yank ()
+              "A hydra to yank !"
+              ("i" yank-pop "next yank")
+              ("a" yank-pop-forward "previous yank")) ; this function needs to be defined! cf definition heading  before
+	      :then '(org-yank))
+    )
+ #+end_src
+
+***** Buffer/windows management
+ #+begin_src emacs-lisp 
+
+    (ryo-modal-key
+     "'" :hydra
+     '(hydra-buffer ()
+              "A hydra to manage buffers !"
+	      ("r" other-window "other-window")
+	      ("a" delete-window "delete-window")         
+	      ("u" delete-other-window "delete-other-window")         
+	      ("M-d" enlarge-window "enlarge-window")
+              ("M-t" shrink-window-horizontally "shrink-window-horizontally")	     
+              ("M-s" shrink-window "shrink-window")
+              ("M-r" enlarge-window-horizontally "enlarge-window-horizontally")	     
+              ("M-i" split-window-right "split-window-right")	     
+              ("M-u" split-window-below "split-window-below")	     
+ ))
+
+ #+end_src
+
+
+ delete-window
+ delete-other-window
+
+**** My colors
+ see [[https://www.color-hex.com/color-palette/106803][color hex website]]
+ in case I need them, here they are 
+ #58d454 green 
+ #30bac5 light blue
+ #0000FF dark blue
+ #ffd214 yellow
+ #ff8029 orange
+ #df0000 red
+
+*** Personal bindings
+#+begin_src emacs-lisp 
+ (general-define-key
+  "C-c e" 'eshell) 
+#+end_src
+
+#+RESULTS:
+** Directives new package
+This section is not finished, you can ignore it
+
+always try the new package at the lowest part of config file
+use-package allows you to control when a package is loaded, and to
+configure options and bindings for this package.
+
+#+begin_example
+;; example
+ (use-package magit
+;; :commands will only load the package if these commands are called
+;; but in system crafters he says that it might not be needed anymore
+   :commands (magit-status magit-get-current-branch) 
+   :custom
+   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
+  (use-package ivy
+    :demand t
+    :diminish
+    :bind (("C-s" . swiper)
+           :map ivy-minibuffer-map
+           ("TAB" . ivy-alt-done)	
+           ("C-r" . ivy-alt-done)
+           ("C-t" . ivy-backward-delete-char)
+           ("C-s" . ivy-next-line)
+           ("C-d" . ivy-previous-line)
+           :map ivy-switch-buffer-map
+           ("C-d" . ivy-previous-line)
+           ("C-r" . ivy-done)
+           ("C-k" . ivy-switch-buffer-kill)
+           :map ivy-reverse-i-search-map
+           ("C-d" . ivy-previous-line)
+           ("C-k" . ivy-reverse-i-search-kill))
+    :config
+    (ivy-mode 1))
+
+#+end_example
+  
+   
+
+
+   
+   
+
+
+#+RESULTS:
+
+
+
+granjon 
+de lahousse
+0789592090
+
+* Recently old stuff
+** Ivy
+This was my old setup for ivy
+;  #+begin_src emacs-lisp
+  (use-package ivy
+    :demand t
+    :diminish
+    :bind (("C-s" . swiper)
+           :map ivy-minibuffer-map
+           ("TAB" . ivy-alt-done)	
+           ("C-r" . ivy-alt-done)
+           ("C-t" . ivy-backward-delete-char)
+           ("C-s" . ivy-next-line)
+           ("C-d" . ivy-previous-line)
+           :map ivy-switch-buffer-map
+           ("C-d" . ivy-previous-line)
+           ("C-r" . ivy-done)
+           ("C-k" . ivy-switch-buffer-kill)
+           :map ivy-reverse-i-search-map
+           ("C-d" . ivy-previous-line)
+           ("C-k" . ivy-reverse-i-search-kill))
+    :config
+    (ivy-mode 1))
+  #+end_src
+
+  #+RESULTS:
+  : ivy-reverse-i-search-kill
+
+*** TODO comprendre l'utilité des :map ici
